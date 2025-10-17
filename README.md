@@ -74,7 +74,7 @@ flowchart TD
 
 ## 🌐 Inference 서버 실행
 
-### Docker Compose (권장)
+### Docker Compose
 
 ```bash
 docker-compose up --build
@@ -116,9 +116,9 @@ curl -X POST http://localhost:8000/predict \
 
 | Category     | Accuracy         | Samples  |
 | ------------ | ---------------- | -------- |
-| Law          | 135/230 (58.70%) | 89%      |
+| Law          | 132/230 (57.39%) | 89%      |
 | Criminal Law | 11/29 (37.93%)   | 11%      |
-| **Overall**  | **146/259**      | **100%** |
+| **Overall**  | **143/259**      | **100%** |
 
 ### 재현 방법
 
