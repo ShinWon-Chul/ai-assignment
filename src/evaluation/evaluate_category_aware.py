@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -24,12 +23,12 @@ async def evaluate_single_sample(
 ) -> dict[str, Any]:
     """
     Evaluate a single sample with the RAG agent using category-aware retrieval.
-    
+
     Args:
         agent: RAG agent instance
         idx: Sample index
         row: Data row
-        
+
     Returns:
         Result dictionary for this sample
     """
@@ -39,16 +38,16 @@ async def evaluate_single_sample(
         options_text = f"A. {row['A']}\nB. {row['B']}\nC. {row['C']}\nD. {row['D']}"
         question_text = f"{question}\n{options_text}"
         category = str(row["Category"])
-        
+
         # Get prediction with category-aware retrieval
         if agent.use_rag and agent.retriever:
             retrieved = await agent.retriever.retrieve(
-                query=question_text, 
+                query=question_text,
                 top_k=agent.top_k,
-                category=category  # Pass category for category-aware boost
+                category=category,  # Pass category for category-aware boost
             )
             prompt = create_rag_prompt(question_text, retrieved)
-            
+
             response = await agent.client.chat.completions.create(
                 model=agent.model,
                 messages=[
@@ -58,22 +57,26 @@ async def evaluate_single_sample(
                 temperature=0.0,
                 max_tokens=10,
             )
-            
+
             answer_text = response.choices[0].message.content
             prediction = agent._extract_answer(answer_text) if answer_text else None
-            
+
             if not prediction:
                 prediction = retrieved[0]["answer"] if retrieved else "A"
         else:
             prediction = await agent.predict(question_text, category)
-        
+
         # Check correctness
         correct_answer = ["A", "B", "C", "D"][int(row["answer"]) - 1]
         is_correct = prediction == correct_answer
-        
+
         # Count category-boosted documents
-        boosted_count = sum(1 for doc in retrieved if doc.get("category_boosted", False)) if agent.use_rag else 0
-        
+        boosted_count = (
+            sum(1 for doc in retrieved if doc.get("category_boosted", False))
+            if agent.use_rag
+            else 0
+        )
+
         # Store result
         result = {
             "idx": int(idx),
@@ -97,9 +100,9 @@ async def evaluate_single_sample(
                 for doc in (retrieved if agent.use_rag else [])
             ],
         }
-        
+
         return result
-    
+
     except Exception as e:
         print(f"Error processing sample {idx}: {e}")
         # Return error result
@@ -126,7 +129,7 @@ async def evaluate_category_aware(
 ) -> None:
     """
     Evaluate RAG agent with category-aware retrieval.
-    
+
     Args:
         dataset: Dataset name (dev or train)
         top_k: Number of documents to retrieve
@@ -139,27 +142,27 @@ async def evaluate_category_aware(
     data_dir = root / "data"
     output_dir = root / "evaluation_results"
     output_dir.mkdir(exist_ok=True)
-    
+
     # Load dataset
     data_path = data_dir / f"{dataset}.csv"
     if not data_path.exists():
         raise FileNotFoundError(f"Dataset not found: {data_path}")
-    
+
     df = pd.read_csv(data_path)
     total = len(df)
-    
-    print(f"\n{'='*80}")
-    print(f"Category-Aware Retrieval Evaluation")
-    print(f"{'='*80}")
+
+    print(f"\n{'=' * 80}")
+    print("Category-Aware Retrieval Evaluation")
+    print(f"{'=' * 80}")
     print(f"Dataset: {dataset}")
     print(f"Total samples: {total}")
-    print(f"Parameters:")
+    print("Parameters:")
     print(f"  - top_k: {top_k}")
     print(f"  - semantic_weight: {semantic_weight:.2f}")
     print(f"  - bm25_weight: {bm25_weight:.2f}")
     print(f"  - category_boost: {category_boost:.2f}")
-    print(f"{'='*80}\n")
-    
+    print(f"{'=' * 80}\n")
+
     # Initialize agent with category-aware retrieval
     print("Initializing RAG Agent with Category-Aware Retrieval...")
     agent = RAGAgent(
@@ -169,51 +172,56 @@ async def evaluate_category_aware(
         use_hybrid=True,
         category_boost=category_boost,
     )
-    
+
     # Prepare tasks for parallel execution
     print(f"Preparing {total} evaluation tasks...")
     tasks = []
     for idx, row in df.iterrows():
         task = evaluate_single_sample(agent, idx, row)
         tasks.append(task)
-    
+
     # Execute all tasks in parallel
     print(f"Evaluating {total} samples in parallel...")
     detailed_results = await asyncio.gather(*tasks)
-    
+
     # Sort results by idx to maintain original order
     detailed_results = sorted(detailed_results, key=lambda x: x["idx"])
-    
+
     # Calculate metrics
     correct = sum(1 for r in detailed_results if r["is_correct"])
     accuracy = correct / total
-    
+
     # Calculate category-wise metrics
     df_results = pd.DataFrame(detailed_results)
-    category_stats = df_results.groupby("category").agg({
-        "is_correct": ["sum", "count", "mean"],
-        "boosted_docs_count": "mean"
-    }).round(4)
-    
-    print(f"\n{'='*80}")
-    print(f"Evaluation Results")
-    print(f"{'='*80}")
+    category_stats = (
+        df_results.groupby("category")
+        .agg({"is_correct": ["sum", "count", "mean"], "boosted_docs_count": "mean"})
+        .round(4)
+    )
+
+    print(f"\n{'=' * 80}")
+    print("Evaluation Results")
+    print(f"{'=' * 80}")
     print(f"Total samples: {total}")
     print(f"Correct predictions: {correct}")
-    print(f"Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
-    print(f"\nCategory-wise Results:")
+    print(f"Accuracy: {accuracy:.4f} ({accuracy * 100:.2f}%)")
+    print("\nCategory-wise Results:")
     for category in category_stats.index:
         correct_cat = int(category_stats.loc[category, ("is_correct", "sum")])
         total_cat = int(category_stats.loc[category, ("is_correct", "count")])
         acc_cat = float(category_stats.loc[category, ("is_correct", "mean")])
-        avg_boosted = float(category_stats.loc[category, ("boosted_docs_count", "mean")])
-        print(f"  {category}: {correct_cat}/{total_cat} ({acc_cat:.4f}) - Avg boosted docs: {avg_boosted:.2f}/{top_k}")
-    print(f"{'='*80}\n")
-    
+        avg_boosted = float(
+            category_stats.loc[category, ("boosted_docs_count", "mean")]
+        )
+        print(
+            f"  {category}: {correct_cat}/{total_cat} ({acc_cat:.4f}) - Avg boosted docs: {avg_boosted:.2f}/{top_k}"
+        )
+    print(f"{'=' * 80}\n")
+
     # Save detailed results (JSON)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_id = f"category_aware_boost{int(category_boost*100):02d}"
-    
+    experiment_id = f"category_aware_boost{int(category_boost * 100):02d}"
+
     # Convert category_stats to JSON-serializable format
     category_stats_dict = {}
     for category in category_stats.index:
@@ -221,9 +229,11 @@ async def evaluate_category_aware(
             "correct": int(category_stats.loc[category, ("is_correct", "sum")]),
             "total": int(category_stats.loc[category, ("is_correct", "count")]),
             "accuracy": float(category_stats.loc[category, ("is_correct", "mean")]),
-            "avg_boosted_docs": float(category_stats.loc[category, ("boosted_docs_count", "mean")]),
+            "avg_boosted_docs": float(
+                category_stats.loc[category, ("boosted_docs_count", "mean")]
+            ),
         }
-    
+
     result_data = {
         "experiment_id": experiment_id,
         "parameters": {
@@ -242,45 +252,47 @@ async def evaluate_category_aware(
         "model": agent.model,
         "results": detailed_results,
     }
-    
+
     json_path = output_dir / f"category_aware_{dataset}_{timestamp}.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(result_data, f, ensure_ascii=False, indent=2)
-    
+
     print(f"✓ Saved detailed results to {json_path}")
-    
+
     # Save summary (TXT)
     txt_path = output_dir / f"category_aware_{dataset}_{timestamp}_summary.txt"
     with open(txt_path, "w", encoding="utf-8") as f:
-        f.write(f"Category-Aware Retrieval Evaluation Summary\n")
-        f.write(f"{'='*80}\n\n")
+        f.write("Category-Aware Retrieval Evaluation Summary\n")
+        f.write(f"{'=' * 80}\n\n")
         f.write(f"Dataset: {dataset}\n")
         f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        f.write(f"Hyperparameters:\n")
+        f.write("Hyperparameters:\n")
         f.write(f"  - top_k: {top_k}\n")
         f.write(f"  - semantic_weight: {semantic_weight:.2f}\n")
         f.write(f"  - bm25_weight: {bm25_weight:.2f}\n")
         f.write(f"  - category_boost: {category_boost:.2f}\n\n")
-        f.write(f"Overall Results:\n")
+        f.write("Overall Results:\n")
         f.write(f"  - Total samples: {total}\n")
         f.write(f"  - Correct predictions: {correct}\n")
-        f.write(f"  - Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)\n\n")
-        f.write(f"Category-wise Results:\n")
+        f.write(f"  - Accuracy: {accuracy:.4f} ({accuracy * 100:.2f}%)\n\n")
+        f.write("Category-wise Results:\n")
         for category in category_stats.index:
             correct_cat = int(category_stats.loc[category, ("is_correct", "sum")])
             total_cat = int(category_stats.loc[category, ("is_correct", "count")])
             acc_cat = float(category_stats.loc[category, ("is_correct", "mean")])
-            avg_boosted = float(category_stats.loc[category, ("boosted_docs_count", "mean")])
+            avg_boosted = float(
+                category_stats.loc[category, ("boosted_docs_count", "mean")]
+            )
             f.write(f"  - {category}:\n")
             f.write(f"      Accuracy: {correct_cat}/{total_cat} ({acc_cat:.4f})\n")
             f.write(f"      Avg boosted docs: {avg_boosted:.2f}/{top_k}\n")
-    
+
     print(f"✓ Saved summary to {txt_path}\n")
 
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Evaluate Category-Aware Retrieval")
     parser.add_argument(
         "--dataset",
@@ -313,9 +325,9 @@ if __name__ == "__main__":
         default=0.15,
         help="Boost score for same-category documents (0.0-0.3)",
     )
-    
+
     args = parser.parse_args()
-    
+
     asyncio.run(
         evaluate_category_aware(
             dataset=args.dataset,
@@ -325,4 +337,3 @@ if __name__ == "__main__":
             category_boost=args.category_boost,
         )
     )
-

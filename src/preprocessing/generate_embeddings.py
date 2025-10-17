@@ -26,8 +26,7 @@ def generate_embeddings() -> None:
     documents_path = root / "data" / "processed" / "documents.json"
     if not documents_path.exists():
         raise FileNotFoundError(
-            f"Documents not found at {documents_path}. "
-            "Run process_data.py first."
+            f"Documents not found at {documents_path}. Run process_data.py first."
         )
 
     print("Loading documents...")
@@ -57,7 +56,7 @@ def generate_embeddings() -> None:
         name="legal_questions",
         metadata={"description": "KMMLU Legal Questions", "model": embedding_model},
     )
-    print(f"Created new collection: legal_questions")
+    print("Created new collection: legal_questions")
 
     # Generate embeddings in batches
     batch_size = 100
@@ -87,7 +86,9 @@ def generate_embeddings() -> None:
         ]
 
         # Store in vector database
-        collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
+        collection.add(
+            ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas
+        )
 
     print(f"\n✓ Stored {len(documents)} embeddings in ChromaDB")
     print(f"✓ Vector store location: {vector_store_path}")
@@ -96,4 +97,3 @@ def generate_embeddings() -> None:
 
 if __name__ == "__main__":
     generate_embeddings()
-

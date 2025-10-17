@@ -15,7 +15,9 @@ load_dotenv()
 
 
 async def evaluate_with_api(
-    dataset: str = "dev", api_url: str = "http://localhost:8000", save_details: bool = False
+    dataset: str = "dev",
+    api_url: str = "http://localhost:8000",
+    save_details: bool = False,
 ) -> None:
     """
     Evaluate the RAG agent on a dataset using API.
@@ -48,7 +50,9 @@ async def evaluate_with_api(
 
             # Get prediction
             try:
-                response = await client.post(f"{api_url}/predict", json={"query": query})
+                response = await client.post(
+                    f"{api_url}/predict", json={"query": query}
+                )
                 response.raise_for_status()
                 prediction = response.json()["answer"]
 
@@ -80,12 +84,12 @@ async def evaluate_with_api(
 
     # Calculate accuracy
     accuracy = correct / total
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"Dataset: {dataset}")
     print(f"Total samples: {total}")
     print(f"Correct: {correct}")
     print(f"Accuracy: {accuracy:.4f}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
 
     # Save results if requested
     if save_details and results:
@@ -136,7 +140,9 @@ async def evaluate_with_details(dataset: str = "dev") -> None:
     for idx, row in df.iterrows():
         # Format query
         question = row["question"]
-        query = f"{question}\nA. {row['A']}\nB. {row['B']}\nC. {row['C']}\nD. {row['D']}"
+        query = (
+            f"{question}\nA. {row['A']}\nB. {row['B']}\nC. {row['C']}\nD. {row['D']}"
+        )
 
         try:
             # Get retrieved documents
@@ -207,7 +213,9 @@ async def evaluate_with_details(dataset: str = "dev") -> None:
 
             if (idx + 1) % 10 == 0:
                 current_accuracy = correct / (idx + 1)
-                print(f"Processed {idx + 1}/{total} samples (Accuracy: {current_accuracy:.4f})")
+                print(
+                    f"Processed {idx + 1}/{total} samples (Accuracy: {current_accuracy:.4f})"
+                )
 
         except Exception as e:
             print(f"Error processing sample {idx}: {e}")
@@ -218,12 +226,12 @@ async def evaluate_with_details(dataset: str = "dev") -> None:
 
     # Calculate accuracy
     accuracy = correct / total
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Dataset: {dataset}")
     print(f"Total samples: {total}")
     print(f"Correct: {correct}")
     print(f"Accuracy: {accuracy:.4f}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Save detailed results
     output_dir = root / "evaluation_results"
@@ -253,8 +261,8 @@ async def evaluate_with_details(dataset: str = "dev") -> None:
     # Save human-readable summary
     summary_path = output_dir / f"summary_{dataset}_{timestamp}.txt"
     with open(summary_path, "w", encoding="utf-8") as f:
-        f.write(f"Evaluation Summary\n")
-        f.write(f"{'='*60}\n\n")
+        f.write("Evaluation Summary\n")
+        f.write(f"{'=' * 60}\n\n")
         f.write(f"Dataset: {dataset}\n")
         f.write(f"Timestamp: {timestamp}\n")
         f.write(f"Model: {agent.model}\n")
@@ -263,21 +271,23 @@ async def evaluate_with_details(dataset: str = "dev") -> None:
         f.write(f"Correct: {correct}\n")
         f.write(f"Accuracy: {accuracy:.4f}\n\n")
 
-        f.write(f"Sample Results (first 5):\n")
-        f.write(f"{'='*60}\n\n")
+        f.write("Sample Results (first 5):\n")
+        f.write(f"{'=' * 60}\n\n")
 
         for i, result in enumerate(detailed_results[:5], 1):
             f.write(f"Sample {i}:\n")
             f.write(f"Question: {result['question']}\n")
-            f.write(f"Prediction: {result['prediction']} | Correct: {result['correct_answer']}\n")
+            f.write(
+                f"Prediction: {result['prediction']} | Correct: {result['correct_answer']}\n"
+            )
             f.write(f"Status: {'✓ CORRECT' if result['is_correct'] else '✗ WRONG'}\n")
-            f.write(f"\nRetrieved Documents:\n")
+            f.write("\nRetrieved Documents:\n")
             for j, doc in enumerate(result["retrieved_documents"], 1):
                 sim = doc.get("similarity")
                 sim_str = f" (sim: {sim:.3f})" if sim else ""
                 f.write(f"  {j}. {doc['question'][:100]}...{sim_str}\n")
                 f.write(f"     Answer: {doc['answer']}\n")
-            f.write(f"\n{'-'*60}\n\n")
+            f.write(f"\n{'-' * 60}\n\n")
 
     print(f"✓ Saved human-readable summary to: {summary_path}")
 
@@ -286,7 +296,11 @@ def main() -> None:
     """Main evaluation function."""
     parser = argparse.ArgumentParser(description="Evaluate RAG agent")
     parser.add_argument(
-        "--dataset", type=str, default="dev", choices=["dev", "train", "test"], help="Dataset to evaluate"
+        "--dataset",
+        type=str,
+        default="dev",
+        choices=["dev", "train", "test"],
+        help="Dataset to evaluate",
     )
     parser.add_argument(
         "--api-url",

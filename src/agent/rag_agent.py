@@ -23,7 +23,7 @@ class RAGAgent:
     ) -> None:
         """
         Initialize the RAG agent.
-        
+
         Args:
             top_k: Number of documents to retrieve
             semantic_weight: Weight for semantic search
@@ -48,7 +48,9 @@ class RAGAgent:
             # Update weights if provided
             if self.retriever.use_hybrid:
                 self.retriever.set_weights(semantic_weight, bm25_weight, category_boost)
-            print(f"✓ RAG Agent initialized with existing retriever (top_k={top_k}, category_boost={category_boost})")
+            print(
+                f"✓ RAG Agent initialized with existing retriever (top_k={top_k}, category_boost={category_boost})"
+            )
         else:
             # Initialize new retriever
             try:
@@ -59,16 +61,26 @@ class RAGAgent:
                     category_boost=category_boost,
                 )
                 self.use_rag = True
-                hybrid_status = f"Hybrid (semantic={semantic_weight}, bm25={bm25_weight})" if use_hybrid else "Semantic only"
-                category_status = f", category_boost={category_boost}" if category_boost > 0 else ""
-                print(f"✓ RAG Agent initialized with vector store ({hybrid_status}{category_status}, top_k={top_k})")
+                hybrid_status = (
+                    f"Hybrid (semantic={semantic_weight}, bm25={bm25_weight})"
+                    if use_hybrid
+                    else "Semantic only"
+                )
+                category_status = (
+                    f", category_boost={category_boost}" if category_boost > 0 else ""
+                )
+                print(
+                    f"✓ RAG Agent initialized with vector store ({hybrid_status}{category_status}, top_k={top_k})"
+                )
             except Exception as e:
                 print(f"⚠ Warning: Could not initialize retriever: {e}")
                 print("⚠ Falling back to zero-shot mode")
                 self.retriever = None
                 self.use_rag = False
 
-    async def predict(self, query: str, category: str | None = None) -> Literal["A", "B", "C", "D"]:
+    async def predict(
+        self, query: str, category: str | None = None
+    ) -> Literal["A", "B", "C", "D"]:
         """
         Predict the answer for a given question using RAG.
 
@@ -89,7 +101,9 @@ class RAGAgent:
             # Fallback to zero-shot
             return await self._predict_zero_shot(query)
 
-    async def _predict_with_rag(self, query: str, category: str | None = None) -> Literal["A", "B", "C", "D"]:
+    async def _predict_with_rag(
+        self, query: str, category: str | None = None
+    ) -> Literal["A", "B", "C", "D"]:
         """
         Predict using RAG (Retrieval-Augmented Generation).
 
@@ -101,7 +115,9 @@ class RAGAgent:
             The predicted answer
         """
         # 1. Retrieve similar questions (with category-aware boost if provided)
-        retrieved = await self.retriever.retrieve(query=query, top_k=self.top_k, category=category)  # type: ignore[union-attr]
+        retrieved = await self.retriever.retrieve(
+            query=query, top_k=self.top_k, category=category
+        )  # type: ignore[union-attr]
 
         if not retrieved:
             print("No similar questions found, using zero-shot")
@@ -185,4 +201,3 @@ class RAGAgent:
                 return letter  # type: ignore[return-value]
 
         return None
-

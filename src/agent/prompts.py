@@ -35,7 +35,7 @@ def create_rag_prompt(query: str, retrieved_docs: list[dict[str, Any]]) -> str:
 
     # Build full prompt
     prompt = f"""{context}
-{'=' * 50}
+{"=" * 50}
 
 === 현재 풀어야 할 문제 ===
 
@@ -64,4 +64,3 @@ def create_zero_shot_prompt(query: str) -> str:
 반드시 A, B, C, 또는 D 중 하나의 문자만 출력하세요."""
 
     return prompt
-

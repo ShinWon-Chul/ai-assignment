@@ -20,4 +20,3 @@ class AgentResponse(BaseModel):
     answer: Literal["A", "B", "C", "D"] = Field(
         ..., description="The letter of the correct option"
     )
-

@@ -1,8 +1,8 @@
 """FastAPI main application."""
 
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -63,4 +63,3 @@ if __name__ == "__main__":
 
     port = int(os.getenv("PORT", "8000"))
     uvicorn.run(app, host="0.0.0.0", port=port)
-

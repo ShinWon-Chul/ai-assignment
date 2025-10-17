@@ -13,15 +13,15 @@ class QuestionRetriever:
     """Retrieve similar questions from vector store using hybrid search."""
 
     def __init__(
-        self, 
-        semantic_weight: float = 0.7, 
+        self,
+        semantic_weight: float = 0.7,
         bm25_weight: float = 0.3,
         use_hybrid: bool = True,
         category_boost: float = 0.0,
     ) -> None:
         """
         Initialize the retriever with hybrid search.
-        
+
         Args:
             semantic_weight: Weight for semantic search (default: 0.7)
             bm25_weight: Weight for BM25 search (default: 0.3)
@@ -33,7 +33,7 @@ class QuestionRetriever:
         self.semantic_weight = semantic_weight
         self.bm25_weight = bm25_weight
         self.category_boost = category_boost
-        
+
         # Get project root
         root = Path(__file__).parent.parent.parent
         vector_store_path = root / "vector_store" / "chroma"
@@ -102,7 +102,7 @@ class QuestionRetriever:
 
         # Semantic search
         semantic_results = await self._semantic_search(query, candidates_k, category)
-        
+
         # BM25 search
         bm25_results = self._bm25_search(query, candidates_k, category)
 
@@ -117,14 +117,14 @@ class QuestionRetriever:
             combined_scores[doc_id] = {
                 "semantic_score": semantic_score,
                 "bm25_score": 0.0,
-                "doc": result
+                "doc": result,
             }
 
         # Add BM25 scores
         for result in bm25_results:
             doc_id = result["id"]
             bm25_score = result["bm25_score"]
-            
+
             if doc_id in combined_scores:
                 combined_scores[doc_id]["bm25_score"] = bm25_score
             else:
@@ -132,20 +132,19 @@ class QuestionRetriever:
                 combined_scores[doc_id] = {
                     "semantic_score": 0.0,
                     "bm25_score": bm25_score,
-                    "doc": result
+                    "doc": result,
                 }
 
         # Step 3: Calculate final hybrid scores with category boost
         for doc_id in combined_scores:
             semantic_score = combined_scores[doc_id]["semantic_score"]
             bm25_score = combined_scores[doc_id]["bm25_score"]
-            
+
             # Linear combination
             hybrid_score = (
-                self.semantic_weight * semantic_score + 
-                self.bm25_weight * bm25_score
+                self.semantic_weight * semantic_score + self.bm25_weight * bm25_score
             )
-            
+
             # Apply category boost if same category
             if category and self.category_boost > 0:
                 doc_category = combined_scores[doc_id]["doc"].get("category", "")
@@ -156,14 +155,12 @@ class QuestionRetriever:
                     combined_scores[doc_id]["category_boosted"] = False
             else:
                 combined_scores[doc_id]["category_boosted"] = False
-            
+
             combined_scores[doc_id]["hybrid_score"] = hybrid_score
 
         # Step 4: Sort by hybrid score and return top_k
         ranked_docs = sorted(
-            combined_scores.values(),
-            key=lambda x: x["hybrid_score"],
-            reverse=True
+            combined_scores.values(), key=lambda x: x["hybrid_score"], reverse=True
         )[:top_k]
 
         # Step 5: Format results
@@ -231,16 +228,14 @@ class QuestionRetriever:
 
         # Get top_k indices
         top_indices = sorted(
-            range(len(bm25_scores)), 
-            key=lambda i: bm25_scores[i], 
-            reverse=True
-        )[:top_k * 2]  # Get more candidates for category filtering
+            range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True
+        )[: top_k * 2]  # Get more candidates for category filtering
 
         # Format results with category filtering
         retrieved = []
         for idx in top_indices:
             doc = self.documents[idx]
-            
+
             # Apply category filter if specified
             if category and doc.get("category") != category:
                 continue
@@ -267,11 +262,13 @@ class QuestionRetriever:
                 break
 
         return retrieved
-    
-    def set_weights(self, semantic_weight: float, bm25_weight: float, category_boost: float = None) -> None:
+
+    def set_weights(
+        self, semantic_weight: float, bm25_weight: float, category_boost: float = None
+    ) -> None:
         """
         Update the weights for hybrid search.
-        
+
         Args:
             semantic_weight: Weight for semantic search
             bm25_weight: Weight for BM25 search
@@ -281,5 +278,6 @@ class QuestionRetriever:
         self.bm25_weight = bm25_weight
         if category_boost is not None:
             self.category_boost = category_boost
-        print(f"✓ Updated weights: semantic={semantic_weight:.2f}, bm25={bm25_weight:.2f}, category_boost={self.category_boost:.2f}")
-
+        print(
+            f"✓ Updated weights: semantic={semantic_weight:.2f}, bm25={bm25_weight:.2f}, category_boost={self.category_boost:.2f}"
+        )

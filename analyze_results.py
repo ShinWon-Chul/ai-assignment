@@ -28,7 +28,7 @@ def analyze_results(results_path: str) -> None:
     accuracy = correct / total
 
     # Basic stats
-    print(f"📊 Overall Statistics:")
+    print("📊 Overall Statistics:")
     print(f"  Dataset: {data['dataset']}")
     print(f"  Model: {data['model']}")
     print(f"  Mode: {'RAG' if data['use_rag'] else 'Zero-shot'}")
@@ -39,7 +39,7 @@ def analyze_results(results_path: str) -> None:
 
     # Error analysis
     wrong_results = [r for r in results if not r["is_correct"]]
-    print(f"❌ Error Analysis:")
+    print("❌ Error Analysis:")
     print(f"  Wrong predictions: {len(wrong_results)}")
     print()
 
@@ -55,25 +55,27 @@ def analyze_results(results_path: str) -> None:
             else:
                 retrieval_no_answer += 1
 
-        print(f"  Retrieval Analysis:")
+        print("  Retrieval Analysis:")
         print(f"    Correct answer in retrieved docs: {retrieval_had_answer}")
         print(f"    Correct answer NOT in retrieved docs: {retrieval_no_answer}")
         print(
-            f"    → Retrieval miss rate: {retrieval_no_answer/len(wrong_results)*100:.1f}%"
+            f"    → Retrieval miss rate: {retrieval_no_answer / len(wrong_results) * 100:.1f}%"
         )
         print()
 
     # Negation pattern analysis
     negation_patterns = ["옳지 않은", "틀린", "잘못된", "해당하지 않는", "아닌"]
     negation_results = [
-        r for r in results if any(pattern in r["question"] for pattern in negation_patterns)
+        r
+        for r in results
+        if any(pattern in r["question"] for pattern in negation_patterns)
     ]
 
     if negation_results:
         negation_correct = sum(1 for r in negation_results if r["is_correct"])
         negation_accuracy = negation_correct / len(negation_results)
 
-        print(f"🔄 Negation Pattern Analysis:")
+        print("🔄 Negation Pattern Analysis:")
         print(f"  Total negation questions: {len(negation_results)}")
         print(f"  Correct: {negation_correct}")
         print(f"  Accuracy: {negation_accuracy:.4f}")
@@ -87,7 +89,7 @@ def analyze_results(results_path: str) -> None:
         if result["is_correct"]:
             category_stats[cat]["correct"] += 1
 
-    print(f"📚 Category Performance:")
+    print("📚 Category Performance:")
     for cat, stats in sorted(category_stats.items()):
         acc = stats["correct"] / stats["total"]
         print(f"  {cat}: {acc:.4f} ({stats['correct']}/{stats['total']})")
@@ -106,7 +108,7 @@ def analyze_results(results_path: str) -> None:
         else:
             difficulty_buckets["Hard (>0.7)"].append(result)
 
-    print(f"🎯 Difficulty Analysis:")
+    print("🎯 Difficulty Analysis:")
     for bucket, bucket_results in difficulty_buckets.items():
         if bucket_results:
             bucket_correct = sum(1 for r in bucket_results if r["is_correct"])
@@ -129,20 +131,24 @@ def analyze_results(results_path: str) -> None:
             min_sim = min(similarities)
             max_sim = max(similarities)
 
-            print(f"🔍 Retrieval Quality (Top-1 Similarity):")
+            print("🔍 Retrieval Quality (Top-1 Similarity):")
             print(f"  Average: {avg_sim:.3f}")
             print(f"  Min: {min_sim:.3f}")
             print(f"  Max: {max_sim:.3f}")
             print()
 
     # Top wrong predictions
-    print(f"🔴 Top 5 Wrong Predictions:")
+    print("🔴 Top 5 Wrong Predictions:")
     print()
     for i, result in enumerate(wrong_results[:5], 1):
         print(f"  {i}. Question: {result['question'][:80]}...")
-        print(f"     Prediction: {result['prediction']} | Correct: {result['correct_answer']}")
+        print(
+            f"     Prediction: {result['prediction']} | Correct: {result['correct_answer']}"
+        )
         if result["retrieved_documents"]:
-            print(f"     Top retrieved answer: {result['retrieved_documents'][0]['answer']}")
+            print(
+                f"     Top retrieved answer: {result['retrieved_documents'][0]['answer']}"
+            )
         print()
 
     print("=" * 70)
@@ -155,13 +161,17 @@ def main() -> None:
         results_dir = Path("evaluation_results")
         if not results_dir.exists():
             print("❌ No evaluation results found.")
-            print("Run: uv run python -m src.evaluation.evaluate --dataset dev --detailed")
+            print(
+                "Run: uv run python -m src.evaluation.evaluate --dataset dev --detailed"
+            )
             sys.exit(1)
 
         json_files = sorted(results_dir.glob("detailed_eval_*.json"), reverse=True)
         if not json_files:
             print("❌ No detailed evaluation results found.")
-            print("Run: uv run python -m src.evaluation.evaluate --dataset dev --detailed")
+            print(
+                "Run: uv run python -m src.evaluation.evaluate --dataset dev --detailed"
+            )
             sys.exit(1)
 
         results_path = json_files[0]
@@ -179,4 +189,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
