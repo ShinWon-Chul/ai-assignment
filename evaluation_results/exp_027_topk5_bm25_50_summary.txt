@@ -1,0 +1,18 @@
+Experiment ID: exp_027_topk5_bm25_50
+================================================================================
+
+Hyperparameters:
+  - top_k: 5
+  - bm25_weight: 0.50
+  - semantic_weight: 0.50
+
+Results:
+  - Total samples: 259
+  - Correct predictions: 146
+  - Accuracy: 0.5637 (56.37%)
+
+Category-wise Accuracy:
+  - Criminal Law: 11/29 (0.3793)
+  - Law: 135/230 (0.5870)
+
+Timestamp: 2025-10-17 19:49:01

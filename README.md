@@ -22,8 +22,6 @@ bash scripts/setup.sh
 - 임베딩 생성 (OpenAI `text-embedding-3-small`)
 - ChromaDB 벡터 스토어 구축
 
-**소요 시간:** 약 5-10분
-
 ---
 
 ## 🏗️ 시스템 구조
@@ -134,7 +132,7 @@ curl -X POST http://localhost:8000/predict \
 
 | top_k | semantic | bm25 | category_boost | Accuracy   |
 | ----- | -------- | ---- | -------------- | ---------- |
-| 5     | 0.50     | 0.50 | 0.00           | **56.37%** |
+| 5     | 0.50     | 0.50 | 0.00           | **55.21%** |
 
 ### 카테고리별 성능
 
@@ -146,9 +144,25 @@ curl -X POST http://localhost:8000/predict \
 
 ### 재현 방법
 
+docker-compose 빌드 완료 후 아래 명령어로 평가를 실행할 수 있습니다:
+
+**Dev Set 평가:**
+
 ```bash
 uv run python -m src.evaluation.evaluate_category_aware \
     --dataset dev \
+    --top-k 5 \
+    --semantic-weight 0.5 \
+    --bm25-weight 0.5 \
+    --category-boost 0.0
+```
+
+**Test Set 평가:**
+
+```bash
+# data/test.csv 파일이 준비되어 있어야 함
+uv run python -m src.evaluation.evaluate_category_aware \
+    --dataset test \
     --top-k 5 \
     --semantic-weight 0.5 \
     --bm25-weight 0.5 \
@@ -178,9 +192,3 @@ ai-assignment/
 ```
 
 ---
-
-## 📖 참고 문서
-
-- **IMPLEMENTATION_GUIDE.md**: 구현 상세 가이드
-- **PROJECT_SUMMARY.md**: 프로젝트 개요
-- **VERIFICATION.md**: 검증 가이드

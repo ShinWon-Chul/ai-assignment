@@ -1,0 +1,24 @@
+Category-Aware Retrieval Evaluation Summary
+================================================================================
+
+Dataset: dev
+Timestamp: 2025-10-17 21:07:05
+
+Hyperparameters:
+  - top_k: 5
+  - semantic_weight: 0.50
+  - bm25_weight: 0.50
+  - category_boost: 0.25
+
+Overall Results:
+  - Total samples: 259
+  - Correct predictions: 143
+  - Accuracy: 0.5521 (55.21%)
+
+Category-wise Results:
+  - Criminal Law:
+      Accuracy: 11/29 (0.3793)
+      Avg boosted docs: 5.00/5
+  - Law:
+      Accuracy: 132/230 (0.5739)
+      Avg boosted docs: 5.00/5
