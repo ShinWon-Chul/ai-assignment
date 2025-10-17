@@ -58,10 +58,10 @@ flowchart TD
 
     Agent --> End([Predicted Answer<br/>1, 2, 3, or 4])
 
-    style Start fill:#e3f2fd
-    style Agent fill:#fff9c4
-    style Retriever fill:#f3e5f5
-    style End fill:#c8e6c9
+    style Start fill:#f0f4f8,stroke:#64748b,stroke-width:2px
+    style Agent fill:#fafafa,stroke:#94a3b8,stroke-width:2px
+    style Retriever fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px
+    style End fill:#f0fdf4,stroke:#86efac,stroke-width:2px
 ```
 
 ### 핵심 컴포넌트
